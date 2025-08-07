@@ -8,7 +8,9 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,12 +33,38 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
+            'avatar' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // TEMPORARY for debugging:
+        /* dd([ */
+        /* 'has_file' => $request->hasFile('avatar'), */
+        /* 'file' => $request->file('avatar'), */
+        /* 'name' => $request->input('name'), */
+        /* ]); */
+        /* $avatarName = null; */
+
+        if ($request->hasFile('avatar')) {
+            $avatar = $request->file('avatar');
+
+            // Create avatars directory if not exists
+            $avatarDir = public_path('avatars');
+            if (!File::exists($avatarDir)) {
+                File::makeDirectory($avatarDir, 0755, true);
+            }
+
+            // Generate unique file name
+            $avatarName = Str::uuid() . '.' . $avatar->getClientOriginalExtension();
+
+            // Move to public/avatars
+            $avatar->move($avatarDir, $avatarName);
+        }
+
         $user = User::create([
+            'avatar_path' => $avatarName,
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),

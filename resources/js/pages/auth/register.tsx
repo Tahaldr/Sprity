@@ -6,10 +6,10 @@ import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 
 type RegisterForm = {
+    avatar: File | null;
     name: string;
     email: string;
     password: string;
@@ -18,6 +18,7 @@ type RegisterForm = {
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
+        avatar: null,
         name: '',
         email: '',
         password: '',
@@ -27,23 +28,46 @@ export default function Register() {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('register'), {
+            forceFormData: true,
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
 
+    // useEffect(() => {
+    //     console.log(data);
+    // }, [data]);
+    //
     return (
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             <Head title="Register" />
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
+            <form className="flex flex-col gap-6" onSubmit={submit} encType="multipart/form-data">
+                <div className="grid gap-5">
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
+                        {/* <Label htmlFor="photo">Photo</Label> */}
+                        <Input
+                            id="avatar"
+                            type="file"
+                            autoFocus
+                            tabIndex={1}
+                            onChange={(e) => {
+                                if (e.target.files) {
+                                    setData('avatar', e.target.files[0]);
+                                    console.log(e.target.files[0]);
+                                }
+                            }}
+                            disabled={processing}
+                        ></Input>
+                        <InputError message={errors.avatar} className="mt-2" />
+                    </div>
+
+                    <div className="grid gap-2">
+                        {/* <Label htmlFor="name">Name</Label> */}
                         <Input
                             id="name"
                             type="text"
                             required
                             autoFocus
-                            tabIndex={1}
+                            tabIndex={2}
                             autoComplete="name"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
@@ -54,12 +78,12 @@ export default function Register() {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        {/* <Label htmlFor="email">Email address</Label> */}
                         <Input
                             id="email"
                             type="email"
                             required
-                            tabIndex={2}
+                            tabIndex={3}
                             autoComplete="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
@@ -70,12 +94,12 @@ export default function Register() {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                        {/* <Label htmlFor="password">Password</Label> */}
                         <Input
                             id="password"
                             type="password"
                             required
-                            tabIndex={3}
+                            tabIndex={4}
                             autoComplete="new-password"
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
@@ -86,12 +110,12 @@ export default function Register() {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
+                        {/* <Label htmlFor="password_confirmation">Confirm password</Label> */}
                         <Input
                             id="password_confirmation"
                             type="password"
                             required
-                            tabIndex={4}
+                            tabIndex={5}
                             autoComplete="new-password"
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
