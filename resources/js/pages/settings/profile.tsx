@@ -6,9 +6,11 @@ import { FormEventHandler } from 'react';
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInitials } from '@/hooks/use-initials';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
@@ -26,6 +28,7 @@ type ProfileForm = {
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
+    const getInitials = useInitials();
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
@@ -40,6 +43,15 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
         });
     };
 
+    // const changeAvatar: (e: React.ChangeEvent<HTMLInputElement>) => {
+    const changeAvatar = () => {
+        console.log('changing..');
+    };
+
+    const deleteAvatar = () => {
+        console.log('deleting..');
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Profile settings" />
@@ -47,6 +59,23 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
             <SettingsLayout>
                 <div className="space-y-6">
                     <HeadingSmall title="Profile information" description="Update your name and email address" />
+
+                    <div className="flex items-end gap-5">
+                        <Avatar className="size-12 overflow-hidden rounded-full">
+                            <AvatarImage src={`/avatars/${auth.user.avatar_path}`} alt={auth.user.name} />
+                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                {getInitials(auth.user.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex gap-3">
+                            <Button variant="outline" size="sm" onClick={changeAvatar}>
+                                Change avatar
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={deleteAvatar}>
+                                Delete avatar
+                            </Button>
+                        </div>
+                    </div>
 
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">
