@@ -8,6 +8,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,5 +61,49 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'avatar' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            $avatar = $request->file('avatar');
+
+            $avatarDir = public_path('avatars');
+            if (!File::exists($avatarDir)) {
+                File::makeDirectory($avatarDir, 0755, true);
+            }
+
+            $avatarName = Str::uuid() . '.' . $avatar->getClientOriginalExtension();
+            $avatar->move($avatarDir, $avatarName);
+
+            $user->avatar_path = $avatarName;
+            $user->save();
+        }
+
+        return back()->with('status', 'avatar-updated');
+    }
+
+    public function deleteAvatar(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            $avatarPath = public_path('avatars/' . $user->avatar_path);
+
+            if (File::exists($avatarPath)) {
+                File::delete($avatarPath);
+            }
+
+            $user->avatar_path = null;
+            $user->save();
+        }
+
+        return back()->with('status', 'avatar-deleted');
     }
 }

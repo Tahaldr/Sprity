@@ -6,9 +6,9 @@ import { useEffect } from 'react';
 export function UserInfo({ user, showEmail = false }: { user: User; showEmail?: boolean }) {
     const getInitials = useInitials();
 
-    useEffect(() => {
-        console.log('user :', user);
-    }, [user]);
+    // useEffect(() => {
+    //     console.log('user :', user);
+    // }, [user]);
 
     return (
         <>

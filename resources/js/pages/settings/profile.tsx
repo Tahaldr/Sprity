@@ -1,7 +1,7 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
@@ -29,10 +29,26 @@ type ProfileForm = {
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
     const getInitials = useInitials();
+    const inputFileRef = useRef<HTMLInputElement | null>(null);
+    const formRef = useRef<HTMLFormElement | null>(null);
+    const [avatarSubmitted, setAvatarSubmitted] = useState<boolean | null>(null);
+    const [avatarDeleteProcessing, setAvatarDeleteProcessing] = useState<boolean | false>(false);
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
         email: auth.user.email,
+    });
+
+    // useForm for avatar
+    const {
+        data: avatarData,
+        setData: setAvatarData,
+        post: postAvatar,
+        errors: postErrors,
+        processing: avatarProcessing,
+        clearErrors,
+    } = useForm<{ avatar: File | null }>({
+        avatar: null,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -43,13 +59,44 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
         });
     };
 
-    // const changeAvatar: (e: React.ChangeEvent<HTMLInputElement>) => {
-    const changeAvatar = () => {
-        console.log('changing..');
+    // Avatar Changing logic
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        if (!file) return;
+
+        clearErrors(); // remove previous errors
+        setAvatarSubmitted(false); // reset first
+        setTimeout(() => {
+            setAvatarData({ avatar: file });
+            setAvatarSubmitted(true);
+        }, 0);
     };
 
-    const deleteAvatar = () => {
-        console.log('deleting..');
+    useEffect(() => {
+        if (avatarSubmitted) {
+            if (!avatarData.avatar) return;
+
+            postAvatar(route('profile.updateAvatar'), {
+                forceFormData: true,
+                onSuccess: () => {
+                    setAvatarSubmitted(false);
+                    setAvatarData({ avatar: null });
+                },
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [avatarSubmitted]);
+
+    // Avatar Deleting logic
+    const handleAvatarDelete = () => {
+        setAvatarDeleteProcessing(true);
+
+        // Send POST request to delete avatar
+        postAvatar(route('profile.deleteAvatar'), {
+            onFinish: () => {
+                setAvatarDeleteProcessing(false);
+            },
+        });
     };
 
     return (
@@ -68,14 +115,45 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex gap-3">
-                            <Button variant="outline" size="sm" onClick={changeAvatar}>
-                                Change avatar
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={deleteAvatar}>
+                            {/* Avatar change btn */}
+                            <form ref={formRef}>
+                                <input type="file" id="avatar" ref={inputFileRef} className="hidden" onChange={handleAvatarChange} />
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={avatarProcessing}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        inputFileRef.current?.click();
+                                    }}
+                                >
+                                    Change avatar
+                                </Button>
+                            </form>
+
+                            {/* Avatar delete btn */}
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={avatarDeleteProcessing || auth.user.avatar_path === null}
+                                onClick={handleAvatarDelete}
+                            >
                                 Delete avatar
                             </Button>
                         </div>
                     </div>
+
+                    {/* Modifing avatar errors */}
+                    {Object.values(postErrors).length > 0 && (
+                        <div className="-mt-2">
+                            {Object.values(postErrors).map((err, i) => (
+                                <p key={i} className="text-sm text-destructive-foreground">
+                                    {err}
+                                </p>
+                            ))}
+                        </div>
+                    )}
 
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">

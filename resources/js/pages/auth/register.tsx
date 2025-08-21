@@ -47,7 +47,6 @@ export default function Register() {
                         <Input
                             id="avatar"
                             type="file"
-                            autoFocus
                             tabIndex={1}
                             onChange={(e) => {
                                 if (e.target.files) {
