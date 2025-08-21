@@ -39,13 +39,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // TEMPORARY for debugging:
-        /* dd([ */
-        /* 'has_file' => $request->hasFile('avatar'), */
-        /* 'file' => $request->file('avatar'), */
-        /* 'name' => $request->input('name'), */
-        /* ]); */
-        /* $avatarName = null; */
+        $avatarName = null;
 
         if ($request->hasFile('avatar')) {
             $avatar = $request->file('avatar');
